@@ -82,7 +82,7 @@ func (c *CHIP8) Step() error {
 	// get the opcode out of memory using pc
 	opcode_1 := c.Memory[c.PC]
 	opcode_2 := c.Memory[c.PC+1]
-	c.Opcode = (uint16(opcode_1) << 8) & uint16(opcode_2)
+	c.Opcode = (uint16(opcode_1) << 8) | uint16(opcode_2)
 	firstHex := c.Opcode >> 12
 	c.PC += 2
 

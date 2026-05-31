@@ -268,7 +268,7 @@ func RANDR(c *CHIP8) error {
 func DRAW(c *CHIP8) error {
 	registerX := ((c.Opcode & 0x0F00) >> 8)
 	registerY := ((c.Opcode & 0x00F0) >> 4)
-	numBytes := (c.Opcode & 0x000F) >> 4
+	numBytes := (c.Opcode & 0x000F)
 
 	x := c.Registers[registerX] % 0x3F
 	y := c.Registers[registerY] % 0x1F
@@ -283,10 +283,12 @@ func DRAW(c *CHIP8) error {
 		// 0b10000000
 		for pixelOffset := range uint32(8) {
 			val := c.Display[startIndex+pixelOffset]
-			setVal := uint32(((byte) & (0x80 >> pixelOffset)) >> pixelOffset)
-			c.Display[startIndex+pixelOffset] = setVal
-			if val == 1 && setVal == 0 {
-				c.Registers[0xF] = 1
+			setVal := uint32(((byte) & (0x80 >> pixelOffset)))
+			if setVal > 0 {
+				if val == 0xFFFFFFFF {
+					c.Registers[0xF] = 1
+				}
+				c.Display[startIndex+pixelOffset] ^= 0xFFFFFFFF
 			}
 		}
 	}

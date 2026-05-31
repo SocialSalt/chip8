@@ -1,48 +1,96 @@
 package userinterface
 
 import (
-	"fmt"
+	"unsafe"
 
+	"github.com/pkg/errors"
 	"github.com/socialsalt/chip8/internal/processor"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-func InitSDL(c *processor.CHIP8) error {
+var DISPLAY_SCALING int32 = 1
+var VIDEO_PITCH = int(4 * processor.DISPLAY_WIDTH * DISPLAY_SCALING)
+
+func CreateSDL() (*sdl.Window, *sdl.Renderer, *sdl.Texture, error) {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
+		return nil, nil, nil, errors.Wrap(err, "failed to init sdl")
 	}
-	defer sdl.Quit()
-	window, err := sdl.CreateWindow("test title", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 5*int32(processor.DISPLAY_WIDTH), 5*int32(processor.DISPLAY_HEIGHT), sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow(
+		"CHIP8",
+		sdl.WINDOWPOS_UNDEFINED,
+		sdl.WINDOWPOS_UNDEFINED,
+		DISPLAY_SCALING*processor.DISPLAY_WIDTH,
+		DISPLAY_SCALING*processor.DISPLAY_HEIGHT,
+		sdl.WINDOW_SHOWN,
+	)
 	if err != nil {
-		panic(err)
+		return nil, nil, nil, errors.Wrap(err, "failed to create window")
 	}
-	defer window.Destroy()
 
 	surface, err := window.GetSurface()
 	if err != nil {
-		panic(err)
+		return nil, nil, nil, errors.Wrap(err, "failed to get surface")
 	}
 
 	surface.FillRect(nil, 0)
-	rect := sdl.Rect{0, 0, 200, 200}
+	rect := sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: DISPLAY_SCALING * processor.DISPLAY_WIDTH,
+		H: DISPLAY_SCALING * processor.DISPLAY_HEIGHT,
+	}
 	colour := sdl.Color{R: 255, G: 0, B: 255, A: 255} // purple
 	pixel := sdl.MapRGBA(surface.Format, colour.R, colour.G, colour.B, colour.A)
 	surface.FillRect(&rect, pixel)
 	window.UpdateSurface()
 
-	running := true
-
-	for running {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch t := event.(type) {
-			case *sdl.KeyboardEvent:
-				handleKeyboardEvent(t, c)
-			case *sdl.QuitEvent:
-				running = false
-			}
-		}
-		fmt.Printf("%+v\n", c.Keypad)
+	renderer, err := window.GetRenderer()
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to get renderer")
 	}
+	texture, err := renderer.CreateTexture(
+		sdl.PIXELFORMAT_RGBA8888,
+		sdl.TEXTUREACCESS_STREAMING,
+		DISPLAY_SCALING*processor.DISPLAY_WIDTH,
+		DISPLAY_SCALING*processor.DISPLAY_HEIGHT,
+	)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to create texture")
+	}
+	return window, renderer, texture, nil
+}
+
+func PollInput(c *processor.CHIP8) bool {
+	event := sdl.PollEvent()
+	switch t := event.(type) {
+	case *sdl.KeyboardEvent:
+		handleKeyboardEvent(t, c)
+	case *sdl.QuitEvent:
+		return false
+	}
+	return true
+}
+
+func UpdateDisplay(buffer []uint32, renderer *sdl.Renderer, texture *sdl.Texture, pitch int) error {
+	rect := sdl.Rect{
+		X: 0,
+		Y: 0,
+		W: DISPLAY_SCALING * processor.DISPLAY_WIDTH,
+		H: DISPLAY_SCALING * processor.DISPLAY_HEIGHT,
+	}
+	ptr := unsafe.SliceData(buffer)
+	unsafeptr := unsafe.Pointer(ptr)
+	if err := texture.Update(&rect, unsafeptr, pitch); err != nil {
+		return errors.Wrap(err, "failed to update texture")
+	}
+	if err := renderer.Clear(); err != nil {
+		return errors.Wrap(err, "failed to clear the renderer")
+	}
+
+	if err := renderer.Copy(texture, nil, nil); err != nil {
+		return errors.Wrap(err, "failed to copy the renderer")
+	}
+	renderer.Present()
 	return nil
 }
 
