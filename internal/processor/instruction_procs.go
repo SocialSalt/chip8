@@ -262,7 +262,6 @@ func RANDR(c *CHIP8) error {
 	return nil
 }
 
-// TODO: determine what to do about XOR mode
 // DXYN draw a sprite
 // all sprites are 8px wide and 1-15 px tall
 func DRAW(c *CHIP8) error {

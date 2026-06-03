@@ -17,11 +17,11 @@ func CreateSDL() (*sdl.Window, *sdl.Renderer, *sdl.Texture, error) {
 	}
 	window, err := sdl.CreateWindow(
 		"CHIP8",
-		sdl.WINDOWPOS_UNDEFINED,
-		sdl.WINDOWPOS_UNDEFINED,
+		sdl.WINDOWPOS_CENTERED,
+		sdl.WINDOWPOS_CENTERED,
 		DISPLAY_SCALING*processor.DISPLAY_WIDTH,
 		DISPLAY_SCALING*processor.DISPLAY_HEIGHT,
-		sdl.WINDOW_SHOWN,
+		sdl.WINDOW_SHOWN|sdl.WINDOW_RESIZABLE,
 	)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to create window")
@@ -105,13 +105,13 @@ func setKeypad(indx int, state uint8, keypad []byte) {
 func handleKeyboardEvent(t *sdl.KeyboardEvent, c *processor.CHIP8) error {
 	switch t.Keysym.Sym {
 	case sdl.K_1:
-		setKeypad(0, t.State, c.Keypad[:])
-	case sdl.K_2:
 		setKeypad(1, t.State, c.Keypad[:])
-	case sdl.K_3:
+	case sdl.K_2:
 		setKeypad(2, t.State, c.Keypad[:])
-	case sdl.K_4:
+	case sdl.K_3:
 		setKeypad(3, t.State, c.Keypad[:])
+	case sdl.K_4:
+		setKeypad(12, t.State, c.Keypad[:])
 	case sdl.K_q:
 		setKeypad(4, t.State, c.Keypad[:])
 	case sdl.K_w:
@@ -119,21 +119,21 @@ func handleKeyboardEvent(t *sdl.KeyboardEvent, c *processor.CHIP8) error {
 	case sdl.K_e:
 		setKeypad(6, t.State, c.Keypad[:])
 	case sdl.K_r:
-		setKeypad(7, t.State, c.Keypad[:])
-	case sdl.K_a:
-		setKeypad(8, t.State, c.Keypad[:])
-	case sdl.K_s:
-		setKeypad(9, t.State, c.Keypad[:])
-	case sdl.K_d:
-		setKeypad(10, t.State, c.Keypad[:])
-	case sdl.K_f:
-		setKeypad(11, t.State, c.Keypad[:])
-	case sdl.K_z:
-		setKeypad(12, t.State, c.Keypad[:])
-	case sdl.K_x:
 		setKeypad(13, t.State, c.Keypad[:])
-	case sdl.K_c:
+	case sdl.K_a:
+		setKeypad(7, t.State, c.Keypad[:])
+	case sdl.K_s:
+		setKeypad(8, t.State, c.Keypad[:])
+	case sdl.K_d:
+		setKeypad(9, t.State, c.Keypad[:])
+	case sdl.K_f:
 		setKeypad(14, t.State, c.Keypad[:])
+	case sdl.K_z:
+		setKeypad(10, t.State, c.Keypad[:])
+	case sdl.K_x:
+		setKeypad(0, t.State, c.Keypad[:])
+	case sdl.K_c:
+		setKeypad(11, t.State, c.Keypad[:])
 	case sdl.K_v:
 		setKeypad(15, t.State, c.Keypad[:])
 	}
