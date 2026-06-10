@@ -47,12 +47,16 @@ func CLS(c *CHIP8) error {
 
 // 00EE
 func RET(c *CHIP8) error {
+	if c.SP == 0 {
+		c.PC = c.Stack[c.SP]
+		return nil
+	}
 	c.SP -= 1
 	c.PC = c.Stack[c.SP]
 	return nil
 }
 
-// 0NNN
+// 1NNN
 func JP(c *CHIP8) error {
 	c.PC = c.Opcode & 0x0FFF
 	return nil
@@ -211,13 +215,13 @@ func RANDR(c *CHIP8) error {
 // DXYN draw a sprite
 // all sprites are 8px wide and 1-15 px tall
 func DRAW(c *CHIP8) error {
-	numBytes := (c.Opcode & 0x000F)
-	x := c.Registers[(c.Opcode&0x0F00)>>8] % 0x3F
-	y := c.Registers[(c.Opcode&0x00F0)>>4] % 0x1F
+	numBytes := uint32(c.Opcode & 0x000F)
+	x := uint32(c.Registers[(c.Opcode&0x0F00)>>8])
+	y := uint32(c.Registers[(c.Opcode&0x00F0)>>4])
 	c.Registers[0xF] = 0
 
 	for row := range numBytes {
-		byte := c.Memory[c.Index+row]
+		byte := c.Memory[uint32(c.Index)+row]
 
 		// read the byte left to right
 		// 0x80
@@ -226,10 +230,10 @@ func DRAW(c *CHIP8) error {
 			if (byte & (0x80 >> pixelOffset)) == 0 {
 				continue
 			}
-			if c.Display[uint32(x)+uint32(y+uint8(row))*64+pixelOffset] == 0xFFFFFFFF {
+			if c.Display[x+pixelOffset+(y+row)*64] == 0xFFFFFFFF {
 				c.Registers[0xF] = 1
 			}
-			c.Display[uint32(x)+uint32(y+uint8(row))*64+pixelOffset] ^= 0xFFFFFFFF
+			c.Display[x+pixelOffset+(y+row)*64] ^= 0xFFFFFFFF
 		}
 	}
 	return nil
@@ -238,7 +242,7 @@ func DRAW(c *CHIP8) error {
 // EX9E
 func SKP(c *CHIP8) error {
 	val := c.Registers[(c.Opcode&0x0F00)>>8]
-	if c.Keypad[val] != 0 {
+	if c.Keypad[val] == 1 {
 		c.PC += 2
 	}
 	return nil
@@ -302,11 +306,9 @@ func LDRI(c *CHIP8) error {
 // FX33
 func BCD(c *CHIP8) error {
 	val := c.Registers[(c.Opcode&0x0F00)>>8]
+	hundos := val / 100
+	tens := (val % 100) / 10
 	ones := val % 10
-	val = val / 10
-	tens := val % 10
-	val = val / 10
-	hundos := val % 10
 
 	c.Memory[c.Index] = hundos
 	c.Memory[c.Index+1] = tens

@@ -21,6 +21,7 @@ type CHIP8 struct {
 	Keypad     [16]byte
 	Display    Display
 	Opcode     uint16
+	DrawFlag   byte
 }
 
 var ROM_START_ADDRESS = 0x200

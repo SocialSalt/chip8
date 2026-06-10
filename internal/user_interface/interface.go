@@ -1,6 +1,7 @@
 package userinterface
 
 import (
+	"fmt"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -27,27 +28,14 @@ func CreateSDL() (*sdl.Window, *sdl.Renderer, *sdl.Texture, error) {
 		return nil, nil, nil, errors.Wrap(err, "failed to create window")
 	}
 
-	surface, err := window.GetSurface()
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to get surface")
-	}
-
-	surface.FillRect(nil, 0)
-	rect := sdl.Rect{
-		X: 0,
-		Y: 0,
-		W: DISPLAY_SCALING * processor.DISPLAY_WIDTH,
-		H: DISPLAY_SCALING * processor.DISPLAY_HEIGHT,
-	}
-	colour := sdl.Color{R: 255, G: 0, B: 255, A: 255} // purple
-	pixel := sdl.MapRGBA(surface.Format, colour.R, colour.G, colour.B, colour.A)
-	surface.FillRect(&rect, pixel)
-	window.UpdateSurface()
-
-	renderer, err := window.GetRenderer()
+	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_TARGETTEXTURE)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to get renderer")
 	}
+	if renderer == nil {
+		return nil, nil, nil, fmt.Errorf("renderer was nil")
+	}
+
 	texture, err := renderer.CreateTexture(
 		sdl.PIXELFORMAT_RGBA8888,
 		sdl.TEXTUREACCESS_STREAMING,

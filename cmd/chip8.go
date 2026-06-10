@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/socialsalt/chip8/internal/processor"
 	userinterface "github.com/socialsalt/chip8/internal/user_interface"
 	"github.com/veandco/go-sdl2/sdl"
@@ -30,7 +31,7 @@ func main() {
 	defer sdl.Quit()
 	defer window.Destroy()
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to create sdl context"))
 	}
 
 	var cycleDelay int64 = 12
